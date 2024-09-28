@@ -35,7 +35,7 @@ The `items.controller.js` is here to provide an example controller that will int
 
 The `auth.controller.js` will use the 'users' table created in the `dao.js` by default. `bcrpyt` is used to hash password and `njwt` is used to create, decode, and encode JSON Web Tokens.
 
-To authenticate make a PUT request to `/api/auth/login`. 
+To authenticate make a POST request to `/api/auth/login`. 
 
 The request body should be:
 
