@@ -8,9 +8,12 @@ import authRoutes from "./routes/auth.routes";
 import itemsRoutes from "./routes/items.routes";
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
 const port = 3000;
 export const app = express();
+
+app.use(cors());
 
 app.listen(port, () =>
   console.log(`Authentication example app listening on port ${port}!`)

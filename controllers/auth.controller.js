@@ -15,9 +15,13 @@ const decodeToken = (token) => {
 };
 
 export const authMiddleware = async (req, res, next) => {
-  const token = req.header("Access-Token");
+  var token = req.header("Access-Token");
   if (!token) {
     return next();
+  }
+
+  if (token.startsWith("Bearer ")) {
+    token = token.slice(7).trim(); // Remove "Bearer " from the token
   }
 
   console.log("Token: ", token);
@@ -59,11 +63,12 @@ export const login = async (req, res) => {
   const user = await repository.getUserByUsername(username);
 
   if (!user) {
-    returnInvalidCredentials(res);
+    return returnInvalidCredentials(res);
   }
 
   bcrypt.compare(password, user.password, (err, result) => {
     if (result) {
+      // Encode the UUID as the token data
       const accessToken = encodeToken({ userId: user.id });
       return res.json({ accessToken });
     } else {
@@ -103,7 +108,7 @@ export const createUser = async (req, res) => {
       console.log("new user:");
       console.log(newUser);
 
-      // Generate a JWT token for the newly created user
+      // Generate a JWT token for the newly created user using UUID
       const accessToken = encodeToken({ userId: newUser.id });
       return res.status(201).json({ accessToken });
     } catch (e) {
@@ -114,6 +119,13 @@ export const createUser = async (req, res) => {
 };
 
 export const verify = (req, res) => {
+  if (!req.userId) {
+    return res.status(401).json({ error: "User not authenticated" });
+  }
+
   console.log("User verified successfully");
-  return res.status(200).json({ message: "User verified successfully" });
+  return res.status(200).json({
+    message: "User verified successfully",
+    userId: req.userId, // Use req.userId which was set in authMiddleware
+  });
 };

@@ -1,4 +1,5 @@
 import dao from "./dao";
+const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
@@ -23,15 +24,19 @@ export default class {
     console.log("Username: ", username);
     console.log("Password: ", password);
 
+    const userId = uuidv4(); // Generate a new UUID for the user
+
     try {
-      const result = await dao.run(
-        "INSERT INTO users (username, password) VALUES (?, ?)",
-        [username, password]
+      // Insert the new user with the generated UUID
+      await dao.run(
+        "INSERT INTO users (id, username, password) VALUES (?, ?, ?)",
+        [userId, username, password]
       );
-      console.log("Insert result: ", result);
+
+      console.log("User created with ID: ", userId);
 
       return {
-        id: result.lastID,
+        id: userId,
         username: username,
       };
     } catch (error) {

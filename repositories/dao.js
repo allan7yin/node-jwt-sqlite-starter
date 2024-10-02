@@ -1,5 +1,6 @@
 const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
 const saltRounds = 10;
 
 // Specify the database mode: in-memory or file-based
@@ -11,14 +12,13 @@ const db = new sqlite3.Database(
 
 export default class {
   static setupDbForDev() {
-    //  This sets up a DB either in memory or in a file by creating tables, inserting values, etc.
     db.serialize(function () {
       const createUsersTable =
-        "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)";
+        "CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT, password TEXT)";
       db.run(createUsersTable);
 
       const createItemsTable =
-        "CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, price NUMERIC)";
+        "CREATE TABLE IF NOT EXISTS items (id TEXT PRIMARY KEY, name TEXT, price NUMERIC)";
       db.run(createItemsTable);
 
       let password = "123";
@@ -28,12 +28,24 @@ export default class {
           console.error("Error hashing password:", err);
           return;
         }
-        const insertUsers = `INSERT INTO users (username, password) VALUES (?, ?), (?, ?);`;
-        db.run(insertUsers, ["foo", hash, "bar", hash]);
+        // Generate UUIDs for each user
+        const insertUsers = `INSERT INTO users (id, username, password) VALUES (?, ?, ?), (?, ?, ?);`;
+        db.run(insertUsers, [uuidv4(), "foo", hash, uuidv4(), "bar", hash]);
       });
 
-      const insertItems = `INSERT INTO items (name, price) VALUES (?, ?), (?, ?), (?, ?);`;
-      db.run(insertItems, ["book", 12.99, "t-shirt", 15.99, "milk", 3.99]);
+      // Generate UUIDs for each item
+      const insertItems = `INSERT INTO items (id, name, price) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?);`;
+      db.run(insertItems, [
+        uuidv4(),
+        "book",
+        12.99,
+        uuidv4(),
+        "t-shirt",
+        15.99,
+        uuidv4(),
+        "milk",
+        3.99,
+      ]);
     });
   }
 
@@ -59,26 +71,25 @@ export default class {
     });
   }
 
-  static run(stmt, params) {
+  static run(stmt, params = []) {
     return new Promise((res, rej) => {
-      console.log("in run");
       db.run(stmt, params, function (error) {
         if (error) {
+          console.log(error.message);
           return rej(error.message);
         }
-        return res({ lastID: this.lastID, changes: this.changes });
+        return res({ changes: this.changes }); // Removed lastID as it's not relevant for UUIDs
       });
     });
   }
 
-  // New insert method for inserting records with parameterized queries
-  static insert(stmt, params) {
+  static insert(stmt, params = [], uuid) {
     return new Promise((res, rej) => {
       db.run(stmt, params, function (error) {
         if (error) {
           return rej(error.message);
         }
-        return res({ lastID: this.lastID });
+        return res({ id: uuid }); // Return the UUID that was passed as a parameter
       });
     });
   }
